@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrias Leviatham | Bio-Atlas v4.0</title>
+    
+    <!-- Fuente: Space Grotesk y Inter para toque científico -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Iconos Phosphor -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Tailwind CSS (CDN para no requerir instalación) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Configuración de colores de Leviatham -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        leviatham: {
+                            900: '#0f172a', // Fondo profundo
+                            800: '#1e293b', // Paneles
+                            700: '#334155', // Bordes
+                            500: '#06b6d4', // Acento Cian (Ciencia)
+                            400: '#22d3ee', // Acento luz
+                            100: '#cffafe', // Texto claro
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Space Grotesk', 'monospace'],
+                    },
+                    animation: {
+                        'spin-slow': 'spin 12s linear infinite',
+                        'pulse-glow': 'pulseGlow 3s infinite',
+                        'scanline': 'scanline 8s linear infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 10px rgba(6, 182, 212, 0.2)' },
+                            '50%': { boxShadow: '0 0 25px rgba(6, 182, 212, 0.5)' },
+                        },
+                        scanline: {
+                            '0%': { transform: 'translateY(-100%)' },
+                            '100%': { transform: 'translateY(100%)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos personalizados avanzados */
+        body {
+            background-color: #0b1120;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06b6d4; 
+        }
+
+        /* Efecto de Lente de Microscopio */
+        .microscope-lens-container {
+            position: relative;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 
+                inset 0 0 50px #000, 
+                0 0 0 10px #1e293b,
+                0 0 0 12px #06b6d4,
+                0 0 60px rgba(6, 182, 212, 0.3);
+            transition: all 0.5s ease;
+        }
+
+        .lens-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.6) 90%, rgba(0,0,0,1) 100%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .lens-crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 11;
+            opacity: 0.4;
+            background-image: 
+                linear-gradient(rgba(6, 182, 212, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.5) 1px, transparent 1px);
+            background-size: 100px 100px;
+            background-position: center;
+            border-radius: 50%;
+        }
+
+        /* Grid de fondo científico */
+        .bg-grid {
+            background-image: linear-gradient(rgba(30, 41, 59, 0.5) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(30, 41, 59, 0.5) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Animación de carga de imagen */
+        .image-fade-enter {
+            opacity: 0;
+            transform: scale(1.1);
+        }
+        .image-fade-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 0.4s ease, transform 0.4s ease-out;
+        }
+
+        /* Botones de control */
+        .control-btn {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            box-shadow: 5px 5px 10px #0b1120, -5px -5px 10px #27354f;
+            transition: all 0.2s ease;
+        }
+        .control-btn:active {
+            box-shadow: inset 5px 5px 10px #0b1120, inset -5px -5px 10px #27354f;
+        }
+        .control-btn.active {
+            background: #06b6d4;
+            color: #0f172a;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-grid min-h-screen flex flex-col font-sans">
+
+    <!-- HEADER -->
+    <header class="bg-leviatham-900 border-b border-leviatham-700 sticky top-0 z-50 bg-opacity-95 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="ph-fill ph-dna text-3xl text-leviatham-500 animate-spin-slow"></i>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-widest text-white uppercase font-mono">
+                        INDUSTRIAS <span class="text-leviatham-500">LEVIATHAM</span>
+                    </h1>
+                    <p class="text-xs text-leviatham-400 tracking-wider">DIVISIÓN DE INVESTIGACIÓN BIOLÓGICA</p>
+                </div>
+            </div>
+            <div class="hidden md:flex gap-4 text-xs font-mono text-leviatham-400">
+                <span class="flex items-center gap-1"><i class="ph ph-circle-wavy-check"></i> SISTEMA ONLINE</span>
+                <span class="flex items-center gap-1"><i class="ph ph-lock-key"></i> SEGURO</span>
+                <span id="clock" class="text-white"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="flex-grow flex flex-col lg:flex-row max-w-7xl mx-auto w-full p-4 gap-6">
+
+        <!-- IZQUIERDA: LISTA DE MUESTRAS -->
+        <aside class="w-full lg:w-1/4 flex flex-col gap-4 h-[300px] lg:h-[calc(100vh-140px)]">
+            <div class="bg-leviatham-800 p-3 rounded-lg border-l-4 border-leviatham-500">
+                <h2 class="font-mono text-lg font-bold text-white flex items-center gap-2">
+                    <i class="ph ph-files"></i> MUESTRARIO
+                </h2>
+                <p class="text-xs text-gray-400">Seleccione un espécimen para análisis.</p>
+            </div>
+            
+            <div class="bg-leviatham-900/80 border border-leviatham-700 rounded-lg flex-grow overflow-y-auto p-2 space-y-2" id="sample-list">
+                <!-- La lista se genera con Javascript -->
+            </div>
+        </aside>
+
+        <!-- CENTRO: VISOR MICROSCOPIO -->
+        <section class="w-full lg:w-1/2 flex flex-col items-center justify-center relative">
+            
+            <!-- Etiqueta de la muestra flotante -->
+            <div class="absolute top-0 left-0 bg-black/60 backdrop-blur px-4 py-2 rounded border border-leviatham-700 z-20">
+                <h3 id="view-title" class="text-leviatham-400 font-bold font-mono text-lg">SELECCIONE MUESTRA</h3>
+                <p id="view-subtitle" class="text-xs text-gray-300 italic">Esperando entrada...</p>
+            </div>
+
+            <!-- El Microscopio -->
+            <div class="relative w-full max-w-[500px] aspect-square flex items-center justify-center p-4">
+                <div class="microscope-lens-container w-full h-full bg-black relative">
+                    <!-- Imagen Real -->
+                    <img id="microscope-image" src="" alt="Vista microscopio" class="w-full h-full object-cover transition-transform duration-700" style="opacity: 0.3;">
+                    
+                    <!-- Capas de efectos -->
+                    <div class="lens-overlay"></div>
+                    <div class="lens-crosshair"></div>
+                    
+                    <!-- Indicador de Zoom en lente -->
+                    <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 bg-black/70 px-3 py-1 rounded-full border border-white/10 z-30">
+                        <span id="lens-zoom-indicator" class="font-mono text-leviatham-500 text-sm font-bold">STANDBY</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles de Aumento (Panel Inferior) -->
+            <div class="mt-6 bg-leviatham-800 p-2 rounded-xl flex gap-4 border border-leviatham-700 shadow-xl z-20">
+                <button onclick="changeZoom('x40')" id="btn-x40" class="control-btn px-6 py-3 rounded-lg font-mono font-bold text-sm text-gray-400 flex flex-col items-center gap-1 group">
+                    <i class="ph ph-magnifying-glass text-xl mb-1 group-hover:text-white"></i>
+                    X40
+                    <span class="text-[10px] opacity-60">EXPLORACIÓN</span>
+                </button>
+                <button onclick="changeZoom('x100')" id="btn-x100" class="control-btn px-6 py-3 rounded-lg font-mono font-bold text-sm text-gray-400 flex flex-col items-center gap-1 group">
+                    <i class="ph ph-scan text-xl mb-1 group-hover:text-white"></i>
+                    X100
+                    <span class="text-[10px] opacity-60">DETALLE</span>
+                </button>
+                <button onclick="changeZoom('x400')" id="btn-x400" class="control-btn px-6 py-3 rounded-lg font-mono font-bold text-sm text-gray-400 flex flex-col items-center gap-1 group">
+                    <i class="ph ph-aperture text-xl mb-1 group-hover:text-white"></i>
+                    X400
+                    <span class="text-[10px] opacity-60">CELULAR</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- DERECHA: DATOS CIENTÍFICOS -->
+        <aside class="w-full lg:w-1/4 flex flex-col gap-4">
+            <div class="bg-leviatham-800 rounded-lg p-5 border-t-4 border-leviatham-500 shadow-lg h-full overflow-y-auto">
+                <div class="flex justify-between items-start mb-4 border-b border-gray-700 pb-2">
+                    <h2 class="font-mono font-bold text-xl text-white">ANÁLISIS DE DATOS</h2>
+                    <i class="ph-fill ph-chart-polar text-leviatham-500 text-2xl"></i>
+                </div>
+
+                <div id="data-panel" class="space-y-6 opacity-50">
+                    <div>
+                        <h4 class="text-xs font-bold text-leviatham-500 uppercase tracking-wider mb-1">Nombre Científico</h4>
+                        <p id="data-scientific" class="text-lg text-white font-serif italic">--</p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-leviatham-500 uppercase tracking-wider mb-1">Clasificación</h4>
+                        <span id="data-kingdom" class="inline-block bg-leviatham-900 px-2 py-1 rounded text-xs border border-leviatham-700 text-gray-300">--</span>
+                    </div>
+
+                    <div class="bg-leviatham-900/50 p-3 rounded border border-leviatham-700/50">
+                        <h4 class="text-xs font-bold text-leviatham-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <i class="ph-fill ph-info"></i> Descripción Técnica
+                        </h4>
+                        <p id="data-desc" class="text-sm text-gray-300 leading-relaxed text-justify">
+                            Seleccione una muestra del panel izquierdo para cargar los datos biométricos y la visualización.
+                        </p>
+                    </div>
+
+                    <!-- Datos simulados de laboratorio -->
+                    <div class="grid grid-cols-2 gap-2 mt-4">
+                        <div class="bg-black/20 p-2 rounded text-center">
+                            <span class="block text-[10px] text-gray-500">ÍNDICE REFRACCIÓN</span>
+                            <span class="text-leviatham-400 font-mono text-sm">1.52</span>
+                        </div>
+                        <div class="bg-black/20 p-2 rounded text-center">
+                            <span class="block text-[10px] text-gray-500">TINCIÓN</span>
+                            <span id="data-stain" class="text-leviatham-400 font-mono text-sm">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- FOOTER: TÉRMINOS Y CONDICIONES -->
+    <footer class="bg-black py-10 mt-8 border-t border-leviatham-800">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+            
+            <div>
+                <h4 class="text-white font-bold mb-4 flex items-center gap-2">
+                    <i class="ph-fill ph-buildings"></i> INDUSTRIAS LEVIATHAM
+                </h4>
+                <p class="text-gray-500 leading-relaxed">
+                    Líderes mundiales en biotecnología aplicada, xenobiología y óptica de alta precisión. Innovando el futuro desde el nivel celular.
+                </p>
+                <p class="mt-4 text-xs text-gray-600">© 2024 Leviatham Corp. Todos los derechos reservados.</p>
+            </div>
+
+            <div>
+                <h4 class="text-white font-bold mb-4">TÉRMINOS DE USO</h4>
+                <ul class="space-y-2 text-gray-500">
+                    <li class="hover:text-leviatham-400 cursor-pointer transition-colors">Protocolo de Bioseguridad Nivel 4</li>
+                    <li class="hover:text-leviatham-400 cursor-pointer transition-colors">Acuerdo de Confidencialidad de Datos</li>
+                    <li class="hover:text-leviatham-400 cursor-pointer transition-colors">Propiedad Intelectual de Muestras</li>
+                    <li class="hover:text-leviatham-400 cursor-pointer transition-colors">Exención de Responsabilidad Mutagénica</li>
+                </ul>
+            </div>
+
+            <div class="border-l border-gray-800 pl-6">
+                <h4 class="text-white font-bold mb-4 text-xs uppercase tracking-widest">Estado del Sistema</h4>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-gray-400">Servidor Central: ONLINE</span>
+                </div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-gray-400">Base de Datos: SINCRONIZADA</span>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-800">
+                    <p class="text-[10px] text-gray-600 text-justify">
+                        El acceso a esta biblioteca digital constituye la aceptación de los términos. El uso no autorizado de las imágenes con fines comerciales fuera de la jurisdicción de Leviatham está prohibido bajo el Tratado de Biotecnología de 2024. Las muestras biológicas visualizadas son representaciones digitales de alta fidelidad.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT: LÓGICA DE LA APLICACIÓN -->
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN DE DATOS (FÁCIL DE EDITAR)
+        // ==========================================
+        // Instrucciones: 
+        // 1. Sube tus imagenes a la misma carpeta que este archivo.
+        // 2. Asegúrate que los nombres coincidan exactamente.
+        // 3. Puedes editar 'description' para cambiar el texto informativo.
+        
+        const BASE_DE_DATOS_MUESTRAS = [
+            {
+                id: 1,
+                nombre: "Corn Whisker W.M.",
+                cientifico: "Zea mays (Estigma)",
+                reino: "Plantae",
+                tincion: "Safranina",
+                descripcion: "Montaje completo (W.M.) de estigmas de maíz. Estas estructuras filamentosas son esenciales para la reproducción de la planta, capturando el polen. Obsérvese la estructura celular alargada y los canales de transporte.",
+                imagenes: {
+                    x40: "Imagen1.png",
+                    x100: "Imagen2.png",
+                    x400: "Imagen3.png"
+                }
+            },
+            {
+                id: 2,
+                nombre: "Mushrooms C.S.",
+                cientifico: "Coprinus sp.",
+                reino: "Fungi",
+                tincion: "Azul de Metileno",
+                descripcion: "Corte transversal (C.S.) de un hongo basidiomiceto. Se pueden apreciar las láminas donde se producen las esporas reproductivas (basidiosporas). Estructura típica de cuerpo fructífero.",
+                imagenes: {
+                    x40: "Imagen4.png",
+                    x100: "Imagen5.png",
+                    x400: null // El usuario no proveyó x400, el sistema manejará esto
+                }
+            },
+            {
+                id: 3,
+                nombre: "Leaf Epidermis of Maize W.M.",
+                cientifico: "Zea mays (Epidermis)",
+                reino: "Plantae",
+                tincion: "Verde Rápido",
+                descripcion: "Vista superficial de la epidermis de la hoja de maíz. Destacan los estomas (poros) rodeados por células oclusivas en forma de mancuerna, típicas de las monocotiledóneas, esenciales para el intercambio gaseoso.",
+                imagenes: {
+                    x40: "Imagen6.png",
+                    x100: "Imagen7.png",
+                    x400: "Imagen8.png"
+                }
+            },
+            {
+                id: 4,
+                nombre: "Antenna of Butterfly W.M.",
+                cientifico: "Lepidoptera (Antena)",
+                reino: "Animalia",
+                tincion: "Sin tinción",
+                descripcion: "Estructura sensorial compleja. Las antenas de mariposa contienen quimiorreceptores altamente sensibles. En aumentos altos se observan los segmentos quitinosos y las sensilias pilosas.",
+                imagenes: {
+                    x40: "Imagen9.png",
+                    x100: "Imagen10.png",
+                    x400: "Imagen11.png"
+                }
+            },
+            {
+                id: 5,
+                nombre: "Mosquito Leg",
+                cientifico: "Culicidae (Pata)",
+                reino: "Animalia",
+                tincion: "Natural",
+                descripcion: "Apéndice articulado de un mosquito. Se observan los segmentos cubiertos de escamas y pelos sensoriales. La estructura ligera y fuerte de quitina permite el aterrizaje en superficies delicadas.",
+                imagenes: {
+                    x40: "Imagen12.png",
+                    x100: "Imagen13.png",
+                    x400: "Imagen14.png"
+                }
+            },
+            {
+                id: 6,
+                nombre: "Tympanite / Insect Membrane",
+                cientifico: "Órgano Sensorial",
+                reino: "Animalia",
+                tincion: "Eosina",
+                descripcion: "Tejido membranoso asociado a la audición o percepción vibratoria en insectos (Tímpano). Muestra una estructura fina y translúcida diseñada para resonar con ondas sonoras.",
+                imagenes: {
+                    x40: "Imagen15.png",
+                    x100: "Imagen16.png",
+                    x400: "Imagen17.png"
+                }
+            },
+            {
+                id: 7,
+                nombre: "Aphis W.M.",
+                cientifico: "Aphidoidea (Pulgón)",
+                reino: "Animalia",
+                tincion: "Carmín",
+                descripcion: "Montaje completo de un pulgón. Pequeño insecto fitófago. Se puede observar su aparato bucal picador-chupador (estilete) utilizado para extraer savia de las plantas.",
+                imagenes: {
+                    x40: "Imagen18.png",
+                    x100: "Imagen19.png",
+                    x400: "Imagen20.png"
+                }
+            },
+            {
+                id: 8,
+                nombre: "Cyclops W.M.",
+                cientifico: "Cyclops sp. (Copépodo)",
+                reino: "Animalia",
+                tincion: "Natural",
+                descripcion: "Pequeño crustáceo de agua dulce. Nombrado por su único ojo central (ocelo). Importante componente del zooplancton. Se observan sus antenas y sacos de huevos si es hembra.",
+                imagenes: {
+                    x40: "Imagen21.png",
+                    x100: "Imagen22.png",
+                    x400: "Imagen23.png"
+                }
+            },
+            {
+                id: 9,
+                nombre: "Zygote of Ascarid Lumbricoide",
+                cientifico: "Ascaris lumbricoides (Huevo)",
+                reino: "Animalia",
+                tincion: "Hematoxilina",
+                descripcion: "Cigoto fertilizado de este nematodo parásito intestinal. Se observa la gruesa pared mamelonada protectora que permite al huevo sobrevivir en condiciones ambientales adversas.",
+                imagenes: {
+                    x40: "Imagen24.png",
+                    x100: "Imagen25.png",
+                    x400: "Imagen26.png"
+                }
+            },
+            {
+                id: 10,
+                nombre: "Frog Blood Smear",
+                cientifico: "Rana (Eritrocitos)",
+                reino: "Animalia",
+                tincion: "Giemsa",
+                descripcion: "Frotis sanguíneo de anfibio. A diferencia de los mamíferos, los glóbulos rojos (eritrocitos) de la rana conservan su núcleo, visible como una mancha oscura central en la célula ovalada.",
+                imagenes: {
+                    x40: "Imagen27.png",
+                    x100: "Imagen28.png",
+                    x400: "Imagen29.png"
+                }
+            }
+        ];
+
+        // ==========================================
+        // LÓGICA DEL SISTEMA
+        // ==========================================
+
+        let estadoActual = {
+            muestraId: null,
+            zoom: 'x40'
+        };
+
+        // Elementos del DOM
+        const imgElement = document.getElementById('microscope-image');
+        const zoomIndicator = document.getElementById('lens-zoom-indicator');
+        const listContainer = document.getElementById('sample-list');
+        const dataPanel = document.getElementById('data-panel');
+
+        // Inicialización
+        function init() {
+            renderList();
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        // Renderizar la lista lateral
+        function renderList() {
+            listContainer.innerHTML = '';
+            BASE_DE_DATOS_MUESTRAS.forEach(muestra => {
+                const item = document.createElement('div');
+                item.className = `p-3 rounded cursor-pointer transition-all border border-transparent hover:bg-leviatham-800 hover:border-leviatham-500 group flex items-center justify-between ${estadoActual.muestraId === muestra.id ? 'bg-leviatham-800 border-leviatham-500' : ''}`;
+                item.onclick = () => cargarMuestra(muestra.id);
+                
+                item.innerHTML = `
+                    <div>
+                        <div class="text-sm font-bold text-gray-200 group-hover:text-white">${muestra.nombre}</div>
+                        <div class="text-[10px] text-leviatham-500 font-mono italic">${muestra.cientifico}</div>
+                    </div>
+                    <i class="ph-bold ph-caret-right text-leviatham-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        // Cargar una muestra específica
+        function cargarMuestra(id) {
+            estadoActual.muestraId = id;
+            estadoActual.zoom = 'x40'; // Resetear zoom al cambiar muestra
+            
+            const muestra = BASE_DE_DATOS_MUESTRAS.find(m => m.id === id);
+            
+            // Actualizar UI Texto
+            document.getElementById('view-title').textContent = muestra.nombre;
+            document.getElementById('view-subtitle').textContent = `ID: LEV-00${muestra.id} | ${muestra.cientifico}`;
+            
+            document.getElementById('data-scientific').textContent = muestra.cientifico;
+            document.getElementById('data-kingdom').textContent = muestra.reino;
+            document.getElementById('data-desc').textContent = muestra.descripcion;
+            document.getElementById('data-stain').textContent = muestra.tincion;
+            
+            // Activar panel de datos
+            dataPanel.classList.remove('opacity-50');
+            dataPanel.classList.add('opacity-100');
+
+            // Actualizar lista para reflejar selección
+            renderList();
+
+            // Cargar imagen
+            actualizarImagen();
+        }
+
+        // Cambiar Zoom
+        function changeZoom(nivel) {
+            if (!estadoActual.muestraId) {
+                alert("Por favor seleccione una muestra del panel izquierdo primero.");
+                return;
+            }
+            estadoActual.zoom = nivel;
+            actualizarImagen();
+        }
+
+        // Lógica de actualización de imagen
+        function actualizarImagen() {
+            if (!estadoActual.muestraId) return;
+
+            const muestra = BASE_DE_DATOS_MUESTRAS.find(m => m.id === estadoActual.muestraId);
+            const rutaImagen = muestra.imagenes[estadoActual.zoom];
+
+            // Actualizar botones activos
+            ['x40', 'x100', 'x400'].forEach(z => {
+                const btn = document.getElementById(`btn-${z}`);
+                if (z === estadoActual.zoom) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Actualizar indicador en lente
+            zoomIndicator.textContent = estadoActual.zoom.toUpperCase();
+
+            // Animación de cambio
+            imgElement.style.opacity = '0';
+            imgElement.style.transform = 'scale(1.1)'; // Pequeño zoom out effect
+
+            setTimeout(() => {
+                if (rutaImagen) {
+                    imgElement.src = rutaImagen;
+                    // Manejo de error si la imagen no existe
+                    imgElement.onerror = function() {
+                        this.src = 'https://via.placeholder.com/500/0f172a/06b6d4?text=IMAGEN+NO+ENCONTRADA';
+                    };
+                } else {
+                    imgElement.src = 'https://via.placeholder.com/500/0f172a/06b6d4?text=SIN+DATOS+X400';
+                }
+                
+                // Fade in
+                imgElement.onload = () => {
+                    imgElement.style.opacity = '0.9'; // Un poco translúcido para efecto microscopio
+                    imgElement.style.transform = 'scale(1)';
+                };
+            }, 300);
+        }
+
+        // Reloj del sistema
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('es-ES') + " UTC-3";
+        }
+
+        // Iniciar
+        init();
+
+    </script>
+</body>
+</html>
